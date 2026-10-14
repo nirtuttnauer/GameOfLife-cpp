@@ -5,6 +5,7 @@
 #include <sstream>
 #include <thread>
 #include <chrono>
+#include <limits>
 
 // Function prototypes
 std::vector<std::vector<bool>> readInitialState(const std::string& filePath);
@@ -59,21 +60,29 @@ std::vector<std::vector<bool>> readInitialState(const std::string& filePath) {
     }
     file.close();
 
-    int height = lines.size();
-    int width = 0;
-    if (height > 0) {
-        width = std::count(lines[0].begin(), lines[0].end(), ' ') + 1;
-    }
-
-    std::vector<std::vector<bool>> initialState(height, std::vector<bool>(width));
-    for (int i = 0; i < height; ++i) {
-        std::istringstream iss(lines[i]);
-        for (int j = 0; j < width; ++j) {
-            int value;
-            iss >> value;
-            initialState[i][j] = (value == 1);
+    std::vector<std::vector<bool>> initialState;
+    for (const auto& inputLine : lines) {
+        std::istringstream iss(inputLine);
+        std::vector<bool> row;
+        std::string token;
+        while (iss >> token) {
+            if (token != "0" && token != "1") {
+                std::cerr << "Invalid cell: expected 0 or 1." << std::endl;
+                return {};
+            }
+            row.push_back(token == "1");
         }
+        if (row.empty() || (!initialState.empty() && row.size() != initialState[0].size())) {
+            std::cerr << "Invalid grid: rows must be nonempty and equally sized." << std::endl;
+            return {};
+        }
+        initialState.push_back(row);
     }
+    if (initialState.empty()) {
+        return {};
+    }
+    int height = initialState.size();
+    int width = initialState[0].size();
 
     std::cout << "Initial state loaded from " << filePath << std::endl;
     std::cout << "Width: " << width << ", Height: " << height << std::endl;
